@@ -54,50 +54,52 @@ for page in page_iterator:
 
             regions = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'sa-east-1', 'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
 
+
+            for region in regions:
                 #print(client)
-            urls_to_test = []    
-            rest_api_ids = []
-            stage_names = []
-            resource_paths = []
-            #print(client.get_account())
-            client = boto3.client('apigateway',aws_access_key_id=response['Credentials']['AccessKeyId'], aws_secret_access_key=response['Credentials']['SecretAccessKey'], aws_session_token=response['Credentials']['SessionToken'])
-            # Get all the REST APIs, the stages and resources
-            all_rest_apis=client.get_rest_apis()
+                urls_to_test = []    
+                rest_api_ids = []
+                stage_names = []
+                resource_paths = []
+                #print(client.get_account())
+                client = boto3.client('apigateway',region_name=region, aws_access_key_id=response['Credentials']['AccessKeyId'], aws_secret_access_key=response['Credentials']['SecretAccessKey'], aws_session_token=response['Credentials']['SessionToken'])
+                # Get all the REST APIs, the stages and resources
+                all_rest_apis=client.get_rest_apis()
 
-            if len(all_rest_apis["items"]) > 0:
-                print("Number of API gateways in the region "+str(len(all_rest_apis["items"])))
+                if len(all_rest_apis["items"]) > 0:
+                    print("Number of API gateways in the region "+str(len(all_rest_apis["items"])))
 
-                for rest_api in all_rest_apis["items"]:
-                        rest_api_ids.append(rest_api["id"])
+                    for rest_api in all_rest_apis["items"]:
+                            rest_api_ids.append(rest_api["id"])
 
-                        stages = client.get_stages(restApiId=rest_api["id"])
-                        for stage in stages["item"]:
-                            stage_names.append(stage["stageName"])
-                            resources=client.get_resources(restApiId=rest_api["id"])
-                            resources = resources['items']
-                            for resource in resources:
-                                resource_paths.append(resource["path"])
-                                if resource["path"] !="/" and resource["path"] !="/{proxy+}":
-                                    url = 'https://'+rest_api["id"] +".execute-api.us-east-1.amazonaws.com"
-                                    url += "/"+stage["stageName"]
-                                    url += resource["path"]
-                                    if url not in urls_to_test:
-                                        urls_to_test.append(url)
+                            stages = client.get_stages(restApiId=rest_api["id"])
+                            for stage in stages["item"]:
+                                stage_names.append(stage["stageName"])
+                                resources=client.get_resources(restApiId=rest_api["id"])
+                                resources = resources['items']
+                                for resource in resources:
+                                    resource_paths.append(resource["path"])
+                                    if resource["path"] !="/" and resource["path"] !="/{proxy+}":
+                                        url = 'https://'+rest_api["id"] +".execute-api."+region+".amazonaws.com"
+                                        url += "/"+stage["stageName"]
+                                        url += resource["path"]
+                                        if url not in urls_to_test:
+                                            urls_to_test.append(url)
 
 
-            for url_to_test in urls_to_test:
-                print(url_to_test)
-                try:
-                    get = requests.get(url_to_test)
-                    # if the request succeeds 
-                    if get.status_code == 200 :
-                        print("URL is reachable...")
-                        fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
-                        print("taking screenshot")
-                        test_fullpage_screenshot(url_to_test, fileName)
-                        print("screenshot saved as " + fileName)
-                    else:
-                        print("URL {0} is NOT reachable...", url_to_test)
-                except:
-                        print("URL {0} is NOT reachable with exception.", url_to_test)
-                        continue
+                for url_to_test in urls_to_test:
+                    print(url_to_test)
+                    try:
+                        get = requests.get(url_to_test)
+                        # if the request succeeds 
+                        if get.status_code == 200 :
+                            print("URL is reachable...")
+                            fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
+                            print("taking screenshot")
+                            test_fullpage_screenshot(url_to_test, fileName)
+                            print("screenshot saved as " + fileName)
+                        else:
+                            print("URL {0} is NOT reachable...", url_to_test)
+                    except:
+                            print("URL {0} is NOT reachable with exception.", url_to_test)
+                            continue
