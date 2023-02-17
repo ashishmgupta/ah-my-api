@@ -5,29 +5,50 @@ import time
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import pandas as pd
+import time 
 
-def test_fullpage_screenshot(url,fileName):
+def take_fullpage_screenshot(url,fileName):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--start-maximized')
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(url)
-    time.sleep(5)
-    
-    #the element with longest height on page
-    #ele=driver.find_element("xpath", '//div[@class="react-grid-layout layout"]')
-    #total_height = ele.size["height"]+1000
-    
-    driver.set_window_size(1920, 1000)      #the trick
+    time.sleep(2)
+    driver.set_window_size(1920, 1000)      
     time.sleep(2)
     driver.save_screenshot(fileName)
     driver.quit()
+
+
+def is_url_public(url_to_test):
+    print(url_to_test)
+    is_public = "False"
+    try:
+        get = requests.get(url_to_test)
+        # if the request succeeds 
+        if get.status_code == 200 :
+            print("URL is reachable...")
+            fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
+            print("taking screenshot")
+            take_fullpage_screenshot(url_to_test, fileName)
+            print("screenshot saved as " + fileName)
+            is_public = "True"
+        else:
+            print("URL {0} is NOT reachable...", url_to_test)
+    except:
+            print("URL {0} is NOT reachable with exception.", url_to_test)
+    finally:
+            return is_public
 
 with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourceName','MethodName','APIKeyRequiredForMethod','MethodURL','IsTrulyPublic']
+df_all_data  = pd.DataFrame(columns = col_names)
+all_data_list = []
 # Create a client to access the STS service
 sts_client = boto3.client('sts')
 
@@ -38,7 +59,7 @@ paginator = org.get_paginator('list_accounts')
 page_iterator = paginator.paginate()
 for page in page_iterator:        
     for acct in page['Accounts']:
-        #print(acct) # print the account
+        print(acct) # print the account
 
         if  acct["Id"] != "655210302908":
             print(" Account Id :" +acct["Id"])
@@ -70,23 +91,55 @@ for page in page_iterator:
                     print("Number of API gateways in the region "+str(len(all_rest_apis["items"])))
 
                     for rest_api in all_rest_apis["items"]:
+                            print(rest_api)
+                            print("\n")
                             rest_api_ids.append(rest_api["id"])
 
                             stages = client.get_stages(restApiId=rest_api["id"])
+                            print(stages)
                             for stage in stages["item"]:
                                 stage_names.append(stage["stageName"])
                                 resources=client.get_resources(restApiId=rest_api["id"])
+                                print("\n")
+                                print(resources)
                                 resources = resources['items']
                                 for resource in resources:
                                     resource_paths.append(resource["path"])
                                     if resource["path"] !="/" and resource["path"] !="/{proxy+}":
-                                        url = 'https://'+rest_api["id"] +".execute-api."+region+".amazonaws.com"
-                                        url += "/"+stage["stageName"]
-                                        url += resource["path"]
-                                        if url not in urls_to_test:
-                                            urls_to_test.append(url)
+                                        print("##############")
+                                        rm = resource["resourceMethods"]
+                                        print(rm)
+                                        for r in rm:
+                                            details_row = []
+                                            details_row.append(rest_api["name"])
+                                            details_row.append(rest_api["id"])
+                                            details_row.append(acct["Id"])
+                                            details_row.append(acct["Name"])
+                                            details_row.append(resource["path"])
+                                            details_row.append(r)
+                                            print(r)
+                                            method_response = client.get_method(restApiId=rest_api["id"],resourceId=resource["id"],httpMethod=r)
+                                            print("apiKeyRequired : " + str(method_response["apiKeyRequired"]))
+                                            details_row.append(str(method_response["apiKeyRequired"]))
+                                            print("##############")
+                                            if r == "GET":
+                                                url = 'https://'+rest_api["id"] +".execute-api."+region+".amazonaws.com"
+                                                url += "/"+stage["stageName"]
+                                                url += resource["path"]
+                                                if url not in urls_to_test:
+                                                    urls_to_test.append(url)
+                                                    details_row.append(url)
+                                                    details_row.append(is_url_public(url))
+                                            else:
+                                                details_row.append("This URL was not tried with " + r + " method")
+                                                details_row.append("Unknown")
+
+                                            print(details_row)
+                                            all_data_list.append(details_row)
 
 
+                                        
+                '''
                 for url_to_test in urls_to_test:
                     print(url_to_test)
                     try:
@@ -96,10 +149,14 @@ for page in page_iterator:
                             print("URL is reachable...")
                             fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
                             print("taking screenshot")
-                            test_fullpage_screenshot(url_to_test, fileName)
+                            take_fullpage_screenshot(url_to_test, fileName)
                             print("screenshot saved as " + fileName)
                         else:
                             print("URL {0} is NOT reachable...", url_to_test)
                     except:
                             print("URL {0} is NOT reachable with exception.", url_to_test)
                             continue
+                '''
+print(all_data_list)
+df = pd.DataFrame(all_data_list, columns=col_names)
+df.to_csv("all_data_"+time.strftime("%Y%m%d-%H%M%S")+".csv")
