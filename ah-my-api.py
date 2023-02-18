@@ -46,7 +46,7 @@ with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
-col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourcePolicyAppliedOnAPI','ResourcePolicy','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
 df_all_data  = pd.DataFrame(columns = col_names)
 all_data_list = []
 # Create a client to access the STS service
@@ -91,8 +91,9 @@ for page in page_iterator:
                     print("Number of API gateways in the region "+str(len(all_rest_apis["items"])))
 
                     for rest_api in all_rest_apis["items"]:
+                            print("~~~~~~~~~~~~~~~~~~")
                             print(rest_api)
-                            print("\n")
+                            print("~~~~~~~~~~~~~~~~~~")
                             rest_api_ids.append(rest_api["id"])
 
                             stages = client.get_stages(restApiId=rest_api["id"])
@@ -115,6 +116,12 @@ for page in page_iterator:
                                             details_row.append(rest_api["id"])
                                             details_row.append(acct["Id"])
                                             details_row.append(acct["Name"])
+                                            if "policy" in rest_api:
+                                                details_row.append("Yes")    
+                                                details_row.append(rest_api["policy"])
+                                            else:
+                                                details_row.append("No")    
+                                                details_row.append("NA")
                                             details_row.append(resource["path"])
                                             details_row.append(r)
                                             print(r)
