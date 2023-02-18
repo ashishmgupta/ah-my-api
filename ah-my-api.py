@@ -46,7 +46,7 @@ with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
-col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourceName','MethodName','APIKeyRequiredForMethod','MethodURL','IsTrulyPublic']
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
 df_all_data  = pd.DataFrame(columns = col_names)
 all_data_list = []
 # Create a client to access the STS service
@@ -119,6 +119,16 @@ for page in page_iterator:
                                             details_row.append(r)
                                             print(r)
                                             method_response = client.get_method(restApiId=rest_api["id"],resourceId=resource["id"],httpMethod=r)
+                                            print("$$$$$$$$$$$$$$$$$$$$$")
+                                            print(method_response)
+                                            print("$$$$$$$$$$$$$$$$$$$$$")
+                                            if method_response["authorizationType"] == 'CUSTOM' :
+                                                details_row.append("Yes")
+                                                details_row.append(method_response["authorizerId"])
+                                            else:
+                                                details_row.append("No")
+                                                details_row.append("NA")
+
                                             print("apiKeyRequired : " + str(method_response["apiKeyRequired"]))
                                             details_row.append(str(method_response["apiKeyRequired"]))
                                             print("##############")
