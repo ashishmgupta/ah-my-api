@@ -46,7 +46,7 @@ with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
-col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourcePolicyAppliedOnAPI','ResourcePolicy','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourcePolicyAppliedOnAPI','ResourcePolicy','StageName','WafAppliedOnStage','WafARN','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
 df_all_data  = pd.DataFrame(columns = col_names)
 all_data_list = []
 # Create a client to access the STS service
@@ -122,6 +122,14 @@ for page in page_iterator:
                                             else:
                                                 details_row.append("No")    
                                                 details_row.append("NA")
+                                            details_row.append(stage["stageName"])
+                                            if "webAclArn" in stage:
+                                                details_row.append("Yes")
+                                                details_row.append("webAclArn")
+                                            else:
+                                                details_row.append("No")
+                                                details_row.append("NA")
+
                                             details_row.append(resource["path"])
                                             details_row.append(r)
                                             print(r)
