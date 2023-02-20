@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import pandas as pd
 import time 
+from termcolor import colored
 
 def take_fullpage_screenshot(url,fileName):
     chrome_options = Options()
@@ -22,23 +23,23 @@ def take_fullpage_screenshot(url,fileName):
     driver.quit()
 
 
-def is_url_public(url_to_test):
-    print(url_to_test)
+def is_url_public(url_to_test, region):
+    print(url_to_test +" in the region " + region)
     is_public = "False"
     try:
         get = requests.get(url_to_test)
         # if the request succeeds 
         if get.status_code == 200 :
-            print("URL is reachable...")
+            print(colored("URL "+url_to_test+" is reachable from public",'red'))
             fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
-            print("taking screenshot")
+            print(colored("Taking screenshot",'red'))
             take_fullpage_screenshot(url_to_test, fileName)
-            print("screenshot saved as " + fileName)
+            print(colored("Screenshot saved as " + fileName, 'red'))
             is_public = "True"
         else:
-            print("URL {0} is NOT reachable...", url_to_test)
+            print("URL "+url_to_test+" is NOT reachable...")
     except:
-            print("URL {0} is NOT reachable with exception.", url_to_test)
+            print("URL "+url_to_test+" is NOT reachable with exception.")
     finally:
             return is_public
 
@@ -46,7 +47,7 @@ with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
-col_names =  ['APIName', 'APIID', 'AccountId','AccountName','ResourcePolicyAppliedOnAPI','ResourcePolicy','StageName','WafAppliedOnStage','WafARN','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','Region','ResourcePolicyAppliedOnAPI','ResourcePolicy','StageName','WafAppliedOnStage','WafARN','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
 df_all_data  = pd.DataFrame(columns = col_names)
 all_data_list = []
 # Create a client to access the STS service
@@ -59,11 +60,11 @@ paginator = org.get_paginator('list_accounts')
 page_iterator = paginator.paginate()
 for page in page_iterator:        
     for acct in page['Accounts']:
-        print(acct) # print the account
+        ##print(acct) # print the account
 
-        if  acct["Id"] != "655210302908":
-            print(" Account Id :" +acct["Id"])
-            print(" Account Email :" +acct["Email"])
+        if  acct["Id"] != "655210302908-1":
+            print("Account Id :" +acct["Id"])
+            print("Account Email :" +acct["Name"])
             #response = sts_client.assume_role(RoleArn='arn:aws:iam::771025898509:role/ScanAWSAPIRole', RoleSessionName='MySession')
             response = sts_client.assume_role(RoleArn='arn:aws:iam::'+acct["Id"]+':role/ScanAWSAPIRole', RoleSessionName='MySession')
             aws_access_key_id=response['Credentials']['AccessKeyId']
@@ -88,34 +89,35 @@ for page in page_iterator:
                 all_rest_apis=client.get_rest_apis()
 
                 if len(all_rest_apis["items"]) > 0:
-                    print("Number of API gateways in the region "+str(len(all_rest_apis["items"])))
+                    print("Number of API gateways in the region " +region + " : " +  str(len(all_rest_apis["items"])))
 
                     for rest_api in all_rest_apis["items"]:
-                            print("~~~~~~~~~~~~~~~~~~")
-                            print(rest_api)
-                            print("~~~~~~~~~~~~~~~~~~")
+                            ## print("~~~~~~~~~~~~~~~~~~")
+                            ## print(rest_api)
+                            ##print("~~~~~~~~~~~~~~~~~~")
                             rest_api_ids.append(rest_api["id"])
 
                             stages = client.get_stages(restApiId=rest_api["id"])
-                            print(stages)
+                            ##print(stages)
                             for stage in stages["item"]:
                                 stage_names.append(stage["stageName"])
                                 resources=client.get_resources(restApiId=rest_api["id"])
-                                print("\n")
-                                print(resources)
+                                ##print("\n")
+                                ##print(resources)
                                 resources = resources['items']
                                 for resource in resources:
                                     resource_paths.append(resource["path"])
                                     if resource["path"] !="/" and resource["path"] !="/{proxy+}":
-                                        print("##############")
+                                        ##print("##############")
                                         rm = resource["resourceMethods"]
-                                        print(rm)
+                                        ##print(rm)
                                         for r in rm:
                                             details_row = []
                                             details_row.append(rest_api["name"])
                                             details_row.append(rest_api["id"])
                                             details_row.append(acct["Id"])
                                             details_row.append(acct["Name"])
+                                            details_row.append(region)
                                             if "policy" in rest_api:
                                                 details_row.append("Yes")    
                                                 details_row.append(rest_api["policy"])
@@ -132,11 +134,11 @@ for page in page_iterator:
 
                                             details_row.append(resource["path"])
                                             details_row.append(r)
-                                            print(r)
+                                            ##print(r)
                                             method_response = client.get_method(restApiId=rest_api["id"],resourceId=resource["id"],httpMethod=r)
-                                            print("$$$$$$$$$$$$$$$$$$$$$")
-                                            print(method_response)
-                                            print("$$$$$$$$$$$$$$$$$$$$$")
+                                            ##print("$$$$$$$$$$$$$$$$$$$$$")
+                                            ##print(method_response)
+                                            ##print("$$$$$$$$$$$$$$$$$$$$$")
                                             if method_response["authorizationType"] == 'CUSTOM' :
                                                 details_row.append("Yes")
                                                 details_row.append(method_response["authorizerId"])
@@ -144,9 +146,9 @@ for page in page_iterator:
                                                 details_row.append("No")
                                                 details_row.append("NA")
 
-                                            print("apiKeyRequired : " + str(method_response["apiKeyRequired"]))
+                                            ##print("apiKeyRequired : " + str(method_response["apiKeyRequired"]))
                                             details_row.append(str(method_response["apiKeyRequired"]))
-                                            print("##############")
+                                            ##print("##############")
                                             if r == "GET":
                                                 url = 'https://'+rest_api["id"] +".execute-api."+region+".amazonaws.com"
                                                 url += "/"+stage["stageName"]
@@ -154,34 +156,14 @@ for page in page_iterator:
                                                 if url not in urls_to_test:
                                                     urls_to_test.append(url)
                                                     details_row.append(url)
-                                                    details_row.append(is_url_public(url))
+                                                    details_row.append(is_url_public(url, region))
                                             else:
                                                 details_row.append("This URL was not tried with " + r + " method")
                                                 details_row.append("Unknown")
 
-                                            print(details_row)
+                                            ##print(details_row)
                                             all_data_list.append(details_row)
 
-
-                                        
-                '''
-                for url_to_test in urls_to_test:
-                    print(url_to_test)
-                    try:
-                        get = requests.get(url_to_test)
-                        # if the request succeeds 
-                        if get.status_code == 200 :
-                            print("URL is reachable...")
-                            fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
-                            print("taking screenshot")
-                            take_fullpage_screenshot(url_to_test, fileName)
-                            print("screenshot saved as " + fileName)
-                        else:
-                            print("URL {0} is NOT reachable...", url_to_test)
-                    except:
-                            print("URL {0} is NOT reachable with exception.", url_to_test)
-                            continue
-                '''
-print(all_data_list)
+#print(all_data_list)
 df = pd.DataFrame(all_data_list, columns=col_names)
 df.to_csv("all_data_"+time.strftime("%Y%m%d-%H%M%S")+".csv")
