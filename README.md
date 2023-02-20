@@ -1,2 +1,3 @@
 # ah-my-api
-![AH MY API](https://user-images.githubusercontent.com/1037523/220185771-5e67dd39-83c1-4dc5-8cda-112e0e83f0c4.png)
+![image](https://user-images.githubusercontent.com/1037523/220186198-1a8b6630-c7dc-4fdb-bfba-d03ed316b0a3.png)
+
