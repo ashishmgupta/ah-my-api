@@ -30,11 +30,12 @@ def is_url_public(url_to_test, region):
         get = requests.get(url_to_test)
         # if the request succeeds 
         if get.status_code == 200 :
-            print(colored("URL "+url_to_test+" is reachable from public",'red'))
+            print(colored("[+] "+url_to_test,'red'))
+            print(colored("[+] API is reachable from the internet.",'red'))
             fileName = url_to_test.replace("https://","").replace("/","_")+ ".png"
-            print(colored("Taking screenshot",'red'))
+            print(colored("[+] Taking screenshot...",'red'))
             take_fullpage_screenshot(url_to_test, fileName)
-            print(colored("Screenshot saved as " + fileName, 'red'))
+            print(colored("[+] Screenshot saved as " + fileName, 'red'))
             is_public = "True"
         else:
             print("URL "+url_to_test+" is NOT reachable...")
@@ -47,7 +48,7 @@ with open('banner.txt', 'r') as file:
     data = file.read()
     print(data)
 
-col_names =  ['APIName', 'APIID', 'AccountId','AccountName','Region','ResourcePolicyAppliedOnAPI','ResourcePolicy','StageName','WafAppliedOnStage','WafARN','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic']
+col_names =  ['APIName', 'APIID', 'AccountId','AccountName','Region','ResourcePolicyAppliedOnAPI','ResourcePolicy','StageName','WafAppliedOnStage','WafARN','ResourceName','MethodName','APIKeyRequiredForMethod','AuthotizerAppliedOnMethod','AuthorizerId','MethodURL','IsTrulyPublic','Comments']
 df_all_data  = pd.DataFrame(columns = col_names)
 all_data_list = []
 # Create a client to access the STS service
@@ -58,13 +59,16 @@ session = boto3.session.Session()
 org = session.client('organizations')
 paginator = org.get_paginator('list_accounts')
 page_iterator = paginator.paginate()
+print("Looking in all the AWS accounts under the AWS organizations...." )
 for page in page_iterator:        
     for acct in page['Accounts']:
         ##print(acct) # print the account
 
         if  acct["Id"] != "655210302908-1":
+            print("################################")
             print("Account Id :" +acct["Id"])
-            print("Account Email :" +acct["Name"])
+            print("Account Name :" +acct["Name"])
+            print("################################")
             #response = sts_client.assume_role(RoleArn='arn:aws:iam::771025898509:role/ScanAWSAPIRole', RoleSessionName='MySession')
             response = sts_client.assume_role(RoleArn='arn:aws:iam::'+acct["Id"]+':role/ScanAWSAPIRole', RoleSessionName='MySession')
             aws_access_key_id=response['Credentials']['AccessKeyId']
@@ -158,8 +162,9 @@ for page in page_iterator:
                                                     details_row.append(url)
                                                     details_row.append(is_url_public(url, region))
                                             else:
-                                                details_row.append("This URL was not tried with " + r + " method")
+                                                details_row.append(url)
                                                 details_row.append("Unknown")
+                                                details_row.append("This URL was not tried with " + r + " method")
 
                                             ##print(details_row)
                                             all_data_list.append(details_row)

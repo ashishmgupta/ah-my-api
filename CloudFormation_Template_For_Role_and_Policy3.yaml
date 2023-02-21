@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  AWSOrgInitiatedScanApiOnlyRole2:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              Service:
+                - organizations.amazonaws.com
+            Action:
+              - sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: AWSOrgInitiatedScanAPIOnlyPolicy2
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apigateway:GET
+                  - lambda:Get*
+                  - lambda:List*
+                Resource: '*'
+    DependsOn: OrganizationsServiceLinkedRoleForIAM
+
+  OrganizationsServiceLinkedRoleForIAM:
+    Type: "AWS::IAM::ServiceLinkedRole"
+    Properties:
+      AWSServiceName: organizations.amazonaws.com
+Outputs:
+  AWSOrgInitiatedScanApiOnlyRoleArn:
+    Value: !GetAtt AWSOrgInitiatedScanApiOnlyRole2.Arn
