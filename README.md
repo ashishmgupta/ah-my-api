@@ -18,5 +18,5 @@ https://github.com/ashishmgupta/ah-my-api.git
 # Install all the requirements
 pip install -r requirements
 
-#Run the script
+# Run the script
 python ./ah-my-api.py
