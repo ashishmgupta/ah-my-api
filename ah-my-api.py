@@ -69,7 +69,6 @@ for page in page_iterator:
             print("Account Id :" +acct["Id"])
             print("Account Name :" +acct["Name"])
             print("################################")
-            #response = sts_client.assume_role(RoleArn='arn:aws:iam::771025898509:role/ScanAWSAPIRole', RoleSessionName='MySession')
             response = sts_client.assume_role(RoleArn='arn:aws:iam::'+acct["Id"]+':role/ScanAWSAPIRole', RoleSessionName='MySession')
             aws_access_key_id=response['Credentials']['AccessKeyId']
             aws_secret_access_key=response['Credentials']['SecretAccessKey']
@@ -96,25 +95,17 @@ for page in page_iterator:
                     print("Number of API gateways in the region " +region + " : " +  str(len(all_rest_apis["items"])))
 
                     for rest_api in all_rest_apis["items"]:
-                            ## print("~~~~~~~~~~~~~~~~~~")
-                            ## print(rest_api)
-                            ##print("~~~~~~~~~~~~~~~~~~")
                             rest_api_ids.append(rest_api["id"])
 
                             stages = client.get_stages(restApiId=rest_api["id"])
-                            ##print(stages)
                             for stage in stages["item"]:
                                 stage_names.append(stage["stageName"])
                                 resources=client.get_resources(restApiId=rest_api["id"])
-                                ##print("\n")
-                                ##print(resources)
                                 resources = resources['items']
                                 for resource in resources:
                                     resource_paths.append(resource["path"])
                                     if resource["path"] !="/" and resource["path"] !="/{proxy+}":
-                                        ##print("##############")
                                         rm = resource["resourceMethods"]
-                                        ##print(rm)
                                         for r in rm:
                                             details_row = []
                                             details_row.append(rest_api["name"])
@@ -138,11 +129,7 @@ for page in page_iterator:
 
                                             details_row.append(resource["path"])
                                             details_row.append(r)
-                                            ##print(r)
                                             method_response = client.get_method(restApiId=rest_api["id"],resourceId=resource["id"],httpMethod=r)
-                                            ##print("$$$$$$$$$$$$$$$$$$$$$")
-                                            ##print(method_response)
-                                            ##print("$$$$$$$$$$$$$$$$$$$$$")
                                             if method_response["authorizationType"] == 'CUSTOM' :
                                                 details_row.append("Yes")
                                                 details_row.append(method_response["authorizerId"])
@@ -150,9 +137,7 @@ for page in page_iterator:
                                                 details_row.append("No")
                                                 details_row.append("NA")
 
-                                            ##print("apiKeyRequired : " + str(method_response["apiKeyRequired"]))
                                             details_row.append(str(method_response["apiKeyRequired"]))
-                                            ##print("##############")
                                             if r == "GET":
                                                 url = 'https://'+rest_api["id"] +".execute-api."+region+".amazonaws.com"
                                                 url += "/"+stage["stageName"]
@@ -166,9 +151,7 @@ for page in page_iterator:
                                                 details_row.append("Unknown")
                                                 details_row.append("This URL was not tried with " + r + " method")
 
-                                            ##print(details_row)
                                             all_data_list.append(details_row)
 
-#print(all_data_list)
 df = pd.DataFrame(all_data_list, columns=col_names)
 df.to_csv("all_data_"+time.strftime("%Y%m%d-%H%M%S")+".csv")
