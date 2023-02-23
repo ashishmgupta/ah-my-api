@@ -1,0 +1,25 @@
+Resources:
+  ScanApiOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ReadOnlyAPIGatewayAssumeRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "arn:aws:iam::655210302908:user/boto3user"
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: ReadOnlyAPIGatewayPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apigateway:GET
+                  - apigateway:HEAD
+                Resource: '*'

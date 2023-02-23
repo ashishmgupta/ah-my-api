@@ -62,14 +62,14 @@ page_iterator = paginator.paginate()
 print("Looking in all the AWS accounts under the AWS organizations...." )
 for page in page_iterator:        
     for acct in page['Accounts']:
-        ##print(acct) # print the account
+        print(acct) # print the account
 
-        if  acct["Id"] != "655210302908-1":
+        if  acct["Id"] != "655210302908":
             print("################################")
             print("Account Id :" +acct["Id"])
             print("Account Name :" +acct["Name"])
             print("################################")
-            response = sts_client.assume_role(RoleArn='arn:aws:iam::'+acct["Id"]+':role/ScanAWSAPIRole', RoleSessionName='MySession')
+            response = sts_client.assume_role(RoleArn='arn:aws:iam::'+acct["Id"]+':role/ReadOnlyAPIGatewayAssumeRole', RoleSessionName='MySession')
             aws_access_key_id=response['Credentials']['AccessKeyId']
             aws_secret_access_key=response['Credentials']['SecretAccessKey']
             aws_session_token=response['Credentials']['SessionToken']
