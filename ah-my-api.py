@@ -62,7 +62,7 @@ page_iterator = paginator.paginate()
 print("Looking in all the AWS accounts under the AWS organizations...." )
 for page in page_iterator:        
     for acct in page['Accounts']:
-        print(acct) # print the account
+        #print(acct) # print the account
 
         if  acct["Id"] != "655210302908":
             print("################################")
