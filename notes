@@ -1,0 +1,4 @@
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\InetStp\Configuration" `
+  -Name "EnableStaticCompressionForSecureRequests" `
+  -Value 1 -PropertyType DWord
+iisreset
